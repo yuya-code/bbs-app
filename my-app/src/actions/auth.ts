@@ -1,56 +1,78 @@
-// 'use server';
+'use server';
 
-// import { redirect } from 'next/navigation';
-// import bcrypt from 'bcryptjs';
-// import { User } from '@/entities/User';
-// import { getRepository } from '@/utils/data-source';
-// import { createSession, deleteSession } from '@/utils/session';
+import { redirect } from 'next/navigation';
+import bcrypt from 'bcryptjs';
+import { User } from '@/entities/User';
+import { getRepository } from '@/utils/data-source';
+import { createSession, deleteSession } from '@/utils/session';
+// deleteSession
 
-// export async function signup(formData: FormData) {
-//   try {
-//     const userRepository = await getRepository(User);
+export async function signup(formData: FormData) {
 
-//     // メールアドレスの重複チェック
-//     const existingUser = await userRepository.findOneBy({ email });
-//     if (existingUser) {
-//       return { error: 'このメールアドレスは既に使用されています' };
-//     }
+    const userName = formData.get('username') as string;
+    const email = formData.get('email') as string;
+    const password = formData.get('password') as string;
 
-//     // パスワードのハッシュ化
-//     const hashedPassword = await bcrypt.hash(password, 10);
+    if (!userName || !email || !password) {
+        return { error: '全て入力してください' };
+    }
 
-//     // ユーザー作成
-//     const newUser = userRepository.create({
-//       userName,
-//       email,
-//       password: hashedPassword,
-//     });
 
-//     await userRepository.save(newUser);
-//   } catch (e) {
-//     console.error(e);
-//     return { error: 'ユーザー登録中にエラーが発生しました' };
-//   }
-// }
+    try {
+        const userRepository = await getRepository(User);
 
-// export async function login(formData: FormData) {
-//   try {
-//     const userRepository = await getRepository(User);
-//     const user = await userRepository.findOneBy({ email });
+        // メールアドレスの重複チェック
+        const existingUser = await userRepository.findOneBy({ email });
+        if (existingUser) {
+        return { error: 'このメールアドレスは既に使用されています' };
+        }
 
-//     if (!user) {
-//       return { error: 'メールアドレスまたはパスワードが正しくありません' };
-//     }
+        // パスワードのハッシュ化
+        const hashedPassword = await bcrypt.hash(password, 10);
 
-//     const passwordMatch = await bcrypt.compare(password, user.password);
+        // ユーザー作成
+        const newUser = userRepository.create({
+            userName,
+            email,
+            password: hashedPassword,
+        });
 
-//     if (!passwordMatch) {
-//       return { error: 'メールアドレスまたはパスワードが正しくありません' };
-//     }
+        const savedUser = await userRepository.save(newUser);
+        await createSession(savedUser.id.toString());
+    } catch (e) {
+        console.error(e);
+        return { error: 'ユーザー登録中にエラーが発生しました' };
+    }
 
-//     await createSession(user.id.toString());
-//   } catch (e) {
-//     console.error(e);
-//     return { error: 'ログイン中にエラーが発生しました' };
-//   }
-// }
+    // try/catch により、エラーが発生した場合はこの行は実行されません
+    // 問題なければ、次の行が実行されます
+    redirect('/');
+}
+
+export async function login(formData: FormData) {
+
+    const email = formData.get('email') as string;
+    const password = formData.get('password') as string;
+
+    try {
+        const userRepository = await getRepository(User);
+        const user = await userRepository.findOneBy({ email });
+
+        if (!user) {
+        return { error: 'メールアドレスまたはパスワードが正しくありません' };
+        }
+
+        const passwordMatch = await bcrypt.compare(password, user.password);
+
+        if (!passwordMatch) {
+        return { error: 'メールアドレスまたはパスワードが正しくありません' };
+        }
+
+        await createSession(user.id.toString());
+    } catch (e) {
+        console.error(e);
+        return { error: 'ログイン中にエラーが発生しました' };
+    }
+
+  redirect('/');
+}

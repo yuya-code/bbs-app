@@ -1,3 +1,4 @@
+import { Suspense } from 'react';
 import './globals.css';
 import Header from './Header';
 
@@ -9,7 +10,8 @@ export default function RootLayout({
   return (
     <html lang="ja">
       <body>
-        {/* <header
+        <Suspense fallback={
+          <header
           style={{ backgroundColor: '#333', color: '#fff', padding: '15px 0' }}
         >
           <div
@@ -26,8 +28,10 @@ export default function RootLayout({
               </span>
             </h1>
           </div>
-        </header> */}
-        <Header />
+        </header>
+        }>
+          <Header />
+        </Suspense>
         <main className="container" style={{ padding: '40px 20px' }}>
           {children}
         </main>

@@ -40,28 +40,35 @@ export async function createPost(formData: FormData) {
         console.error(e);
         return { error: '投稿の作成中にエラーが発生しました' };
     }
-
+    // maxは全てのキャッシュを削除
+    revalidateTag('posts', 'max');
     redirect('/');
 }
 
-// export async function getPosts() {
-//   const postRepository = await getRepository(Post);
+export async function getPosts() {
+    // データベースをキャッシュすることで、同一の情報を複数のクライアントから取得することが可能
+    'use cache';
+    cacheTag('posts');
 
-//   // 投稿一覧を取得（作成日時の降順）
-//   const posts = await postRepository.find({
-//     relations: {
-//       user: true,
-//     },
-//     order: {
-//       createdAt: 'DESC',
-//     },
-//   });
 
-//   return posts.map((post) => ({
-//     ...post,
-//     user: { ...post.user },
-//   }));
-// }
+    const postRepository = await getRepository(Post);
+
+    // 投稿一覧を取得（作成日時の降順）
+    // findからデータベースの投稿情報を取得
+    const posts = await postRepository.find({
+        relations: {
+        user: true,
+        },
+        order: {
+        createdAt: 'DESC',
+        },
+    });
+
+    return posts.map((post) => ({
+        ...post,
+        user: { ...post.user },
+    }));
+}
 
 // export async function getPost(id: number) {
 //   const postRepository = await getRepository(Post);
